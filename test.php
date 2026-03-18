@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ztorespot · Modern dashboard</title>
+    <!-- Bootstrap 5 + Icons + subtle custom polish -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Font (Inter) for modern typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Prevent body from scrolling */
+        }
+        
+        body {
+            background: #f3f6fd;
+            overflow: hidden;
+        }
+
+        /* Main layout container */
+        .dashboard-container {
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ---------- SIDEBAR modern dark + smooth ---------- */
+        .sidebar {
+            height: 100vh;
+            background: #0b1321;        /* deep navy */
+            color: #eaeef2;
+            padding: 2rem 1rem 1.5rem 1rem;
+            transition: left 0.25s ease-in-out;
+            box-shadow: 4px 0 25px rgba(0, 0, 0, 0.15);
+            border-top-right-radius: 28px;
+            border-bottom-right-radius: 28px;
+            position: relative;
+            z-index: 1050;
+            overflow-y: auto; /* Sidebar scrolls if needed */
+        }
+
+        .sidebar h4 {
+            font-weight: 600;
+            letter-spacing: 1px;
+            font-size: 1.7rem;
+            margin-bottom: 2.5rem;
+            padding-left: 0.5rem;
+            background: linear-gradient(135deg, #a78bfa, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            color: #b0c4de;
+            text-decoration: none;
+            padding: 12px 16px;
+            border-radius: 16px;
+            margin-bottom: 8px;
+            font-weight: 450;
+            transition: background 0.2s, color 0.2s, transform 0.1s;
+            border: 1px solid transparent;
+        }
+
+        .sidebar a i {
+            font-size: 1.4rem;
+            width: 28px;
+            text-align: center;
+        }
+
+        .sidebar a:hover {
+            background: #1e2a41;         /* soft glow */
+            color: white;
+            border-color: #334155;
+            transform: translateX(4px);
+        }
+
+        .sidebar a:active {
+            transform: scale(0.98);
+        }
+
+        /* active simulated (first link) */
+        .sidebar a:first-child {
+            background: #2a3a5a;
+            color: white;
+            box-shadow: 0 10px 20px -8px #1e2f4a;
+        }
+
+        /* ----- main content area with scrolling ----- */
+        .main-content {
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ----- main top bar (fixed at top) ----- */
+        .topbar {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 16px 28px;
+            border-radius: 40px;
+            margin: 20px 30px 20px 20px;
+            box-shadow: 0 8px 20px -6px rgba(0, 20, 40, 0.1);
+            flex-shrink: 0; /* Prevent topbar from shrinking */
+        }
+
+        .topbar h5 {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .user-profile span {
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        .avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 40px;
+            background: linear-gradient(145deg, #4f46e5, #a855f7);
+            padding: 2px;
+            object-fit: cover;
+            border: 2px solid white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* ----- Scrollable content area (ONLY this scrolls) ----- */
+        .scrollable-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 20px 20px 20px;
+            scroll-behavior: smooth;
+        }
+
+        /* Custom scrollbar for better UX */
+        .scrollable-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scrollable-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .scrollable-content::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .scrollable-content::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* ----- cards with glass gradient ----- */
+        .card-box {
+            border-radius: 28px;
+            padding: 24px 22px;
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 18px 30px -12px rgba(0, 0, 0, 0.25);
+            transition: all 0.2s ease;
+            backdrop-filter: blur(2px);
+        }
+
+        .card-box:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 24px 36px -12px rgba(0, 0, 0, 0.35);
+        }
+
+        .card-box h6 {
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            opacity: 0.85;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .card-box h3 {
+            font-weight: 700;
+            font-size: 2.2rem;
+            margin-bottom: 0;
+        }
+
+        .bg1 { background: linear-gradient(145deg, #4f46e5, #818cf8); }
+        .bg2 { background: linear-gradient(145deg, #0f766e, #14b8a6); }
+        .bg3 { background: linear-gradient(145deg, #b45309, #f59e0b); }
+        .bg4 { background: linear-gradient(145deg, #b91c1c, #ef4444); }
+
+        /* ----- table modern ----- */
+        .recent-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .recent-header h5 {
+            font-weight: 650;
+            color: #0f1825;
+            font-size: 1.6rem;
+            margin: 0;
+        }
+
+        .badge-modern {
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            letter-spacing: 0.3px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        .table-wrap {
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(4px);
+            border-radius: 30px;
+            padding: 6px 6px 6px 6px;
+            border: 1px solid rgba(255,255,255,0.9);
+            box-shadow: 0 20px 35px -6px rgba(0,20,50,0.12);
+        }
+
+        .table {
+            margin-bottom: 0;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+        }
+
+        .table thead th {
+            border: none;
+            background: transparent;
+            color: #344767;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 18px 20px 12px 20px;
+        }
+
+        .table tbody tr {
+            background: white;
+            border-radius: 24px;
+            transition: 0.1s;
+            box-shadow: 0 6px 12px -8px rgba(0,0,0,0.1);
+        }
+
+        .table tbody tr:hover {
+            background: #fafbff;
+            box-shadow: 0 10px 18px -8px #1e293b30;
+        }
+
+        .table td {
+            padding: 18px 20px;
+            vertical-align: middle;
+            border: none;
+            font-weight: 450;
+            color: #1f2a41;
+        }
+
+        .badge.bg-success { background: #10b981; font-weight: 500; padding: 8px 14px; border-radius: 40px; }
+        .badge.bg-warning { background: #f59e0b; color: #1e1e2f; font-weight: 500; padding: 8px 14px; border-radius: 40px; }
+        .badge.bg-danger  { background: #ef4444; font-weight: 500; padding: 8px 14px; border-radius: 40px; }
+
+        /* ----- mobile menu button & sidebar offcanvas-like behavior ----- */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -320px;
+                width: 280px;
+                top: 0;
+                bottom: 0;
+                z-index: 1060;
+                border-radius: 0 28px 28px 0;
+                transition: left 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .topbar {
+                margin: 15px 15px 15px 15px;
+                padding: 12px 18px;
+            }
+
+            .scrollable-content {
+                padding: 0 15px 15px 15px;
+            }
+
+            /* overlay when sidebar open */
+            body.sidebar-open::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.3);
+                backdrop-filter: blur(3px);
+                z-index: 1040;
+                transition: 0.2s;
+            }
+        }
+
+        /* small extra touch */
+        .menu-toggle {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 40px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.02);
+            transition: 0.1s;
+        }
+        .menu-toggle:hover {
+            background: #f1f5f9;
+        }
+
+        /* close button only visible on mobile */
+        .sidebar-close {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .sidebar-close {
+                display: flex;
+                justify-content: flex-end;
+                margin-bottom: 20px;
+            }
+            .sidebar-close i {
+                font-size: 1.8rem;
+                color: #b0c4de;
+                cursor: pointer;
+                padding: 6px;
+            }
+            .sidebar-close i:hover { color: white; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid g-0 dashboard-container">
+        <div class="row g-0" style="height: 100%;">
+
+            <!-- SIDEBAR with close icon (mobile) -->
+            <div class="col-auto sidebar" id="mainSidebar">
+                <div class="sidebar-close">
+                    <i class="bi bi-x-lg" onclick="toggleSidebar()"></i>
+                </div>
+                <h4 class="px-2">Ztorespot</h4>
+                <a href="#"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                <a href="#"><i class="bi bi-cart"></i> Orders</a>
+                <a href="#"><i class="bi bi-people"></i> Customers</a>
+                <a href="#"><i class="bi bi-box"></i> Products</a>
+                <a href="#"><i class="bi bi-graph-up"></i> Analytics</a>
+                <a href="#"><i class="bi bi-gear"></i> Settings</a>
+                <a href="login.php" class="mt-4" style="border-top: 1px solid #253141; border-radius: 0; padding-top: 18px;"><i class="bi bi-box-arrow-right"></i> Logout</a>
+            </div>
+
+            <!-- MAIN CONTENT with fixed topbar and scrollable area -->
+            <div class="col main-content" style="flex: 1 1 0; min-width: 0;">
+
+                <!-- TOPBAR with menu toggle + user (fixed at top) -->
+                <div class="topbar d-flex justify-content-between align-items-center">
+                    <button class="btn btn-link menu-toggle d-md-none p-0 border-0" onclick="toggleSidebar()">
+                        <i class="bi bi-list fs-2" style="color:#1e293b;"></i>
+                    </button>
+                    <div class="d-flex align-items-center gap-3">
+                        <!-- breadcrumb / page title appears on medium+ -->
+                        <i class="bi bi-grid-fill d-none d-md-inline-block fs-4" style="color:#4f46e5;"></i>
+                        <h5 class="mb-0 d-none d-md-block">Dashboard</h5>
+                    </div>
+                    <div class="user-profile">
+                        <span class="d-none d-sm-inline">Alex</span>
+                        <img src="https://i.pravatar.cc/120?u=100" alt="avatar" class="avatar">
+                    </div>
+                </div>
+
+                <!-- SCROLLABLE CONTENT AREA (ONLY this scrolls when mouse is active here) -->
+                <div class="scrollable-content">
+
+                    <!-- METRIC CARDS (row) -->
+                    <div class="row g-4">
+                        <div class="col-lg-3 col-md-6 col-sm-6">
+                            <div class="card-box bg1">
+                                <h6><i class="bi bi-bag-check me-1"></i> Total Orders</h6>
+                                <h3>1,250</h3>
+                                <small class="opacity-75">↑ 12% vs last month</small>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 col-sm-6">
+                            <div class="card-box bg2">
+                                <h6><i class="bi bi-currency-rupee me-1"></i> Revenue</h6>
+                                <h3>₹85,000</h3>
+                                <small class="opacity-75">↑ 8.2%</small>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 col-sm-6">
+                            <div class="card-box bg3">
+                                <h6><i class="bi bi-person-up me-1"></i> Customers</h6>
+                                <h3>320</h3>
+                                <small class="opacity-75">+24 new</small>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 col-sm-6">
+                            <div class="card-box bg4">
+                                <h6><i class="bi bi-hourglass-split me-1"></i> Pending</h6>
+                                <h3>45</h3>
+                                <small class="opacity-75">requires attention</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RECENT ORDERS + extra filter -->
+                    <div class="recent-header">
+                        <h5><i class="bi bi-clock-history me-2" style="color:#4f46e5;"></i> Recent orders</h5>
+                        <div>
+                            <span class="badge bg-light text-dark p-3 px-4 rounded-pill"><i class="bi bi-funnel me-1"></i> This week</span>
+                        </div>
+                    </div>
+
+                    <!-- MODERN TABLE (frosted) -->
+                    <div class="table-wrap">
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Customer</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th style="width: 80px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><span class="fw-bold">#1001</span></td>
+                                        <td><i class="bi bi-person-circle me-2"></i>Harish</td>
+                                        <td><span class="fw-semibold">₹1,200</span></td>
+                                        <td><span class="badge bg-success">Paid</span></td>
+                                        <td><i class="bi bi-eye text-secondary"></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="fw-bold">#1002</span></td>
+                                        <td><i class="bi bi-person-circle me-2"></i>Ravi</td>
+                                        <td><span class="fw-semibold">₹850</span></td>
+                                        <td><span class="badge bg-warning">Pending</span></td>
+                                        <td><i class="bi bi-eye text-secondary"></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="fw-bold">#1003</span></td>
+                                        <td><i class="bi bi-person-circle me-2"></i>Kumar</td>
+                                        <td><span class="fw-semibold">₹2,300</span></td>
+                                        <td><span class="badge bg-danger">Failed</span></td>
+                                        <td><i class="bi bi-eye text-secondary"></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="fw-bold">#1004</span></td>
+                                        <td><i class="bi bi-person-circle me-2"></i>Divya</td>
+                                        <td><span class="fw-semibold">₹3,420</span></td>
+                                        <td><span class="badge bg-success">Paid</span></td>
+                                        <td><i class="bi bi-eye text-secondary"></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="fw-bold">#1005</span></td>
+                                        <td><i class="bi bi-person-circle me-2"></i>Priya</td>
+                                        <td><span class="fw-semibold">₹5,670</span></td>
+                                        <td><span class="badge bg-success">Paid</span></td>
+                                        <td><i class="bi bi-eye text-secondary"></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="fw-bold">#1006</span></td>
+                                        <td><i class="bi bi-person-circle me-2"></i>Rahul</td>
+                                        <td><span class="fw-semibold">₹950</span></td>
+                                        <td><span class="badge bg-warning">Pending</span></td>
+                                        <td><i class="bi bi-eye text-secondary"></i></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="fw-bold">#1007</span></td>
+                                        <td><i class="bi bi-person-circle me-2"></i>Anjali</td>
+                                        <td><span class="fw-semibold">₹4,230</span></td>
+                                        <td><span class="badge bg-success">Paid</span></td>
+                                        <td><i class="bi bi-eye text-secondary"></i></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- subtle extra stats row (optional) -->
+                    <div class="row mt-5 g-3">
+                        <div class="col-md-6">
+                            <div class="p-4 bg-white rounded-5 shadow-sm d-flex align-items-center gap-3">
+                                <div class="bg-primary bg-opacity-10 p-3 rounded-4"><i class="bi bi-truck fs-2" style="color:#4f46e5;"></i></div>
+                                <div><span class="text-secondary">delivery success</span> <br> <strong class="fs-5">98.3%</strong></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-4 bg-white rounded-5 shadow-sm d-flex align-items-center gap-3">
+                                <div class="bg-success bg-opacity-10 p-3 rounded-4"><i class="bi bi-star fs-2" style="color:#0f766e;"></i></div>
+                                <div><span class="text-secondary">avg. rating</span> <br> <strong class="fs-5">4.8 ★</strong></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>  <!-- end scrollable content area -->
+            </div>  <!-- end main col -->
+        </div>  <!-- end row -->
+    </div>  <!-- end container-fluid -->
+
+    <!-- overlay + sidebar toggle script -->
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            const body = document.body;
+            sidebar.classList.toggle('active');
+
+            // add/remove overlay on mobile
+            if (window.innerWidth <= 768) {
+                if (sidebar.classList.contains('active')) {
+                    // create overlay if not exists
+                    if (!document.getElementById('sidebarOverlay')) {
+                        const overlay = document.createElement('div');
+                        overlay.id = 'sidebarOverlay';
+                        overlay.style.position = 'fixed';
+                        overlay.style.inset = '0';
+                        overlay.style.background = 'rgba(0,0,0,0.3)';
+                        overlay.style.backdropFilter = 'blur(3px)';
+                        overlay.style.zIndex = '1040';
+                        overlay.addEventListener('click', function() {
+                            toggleSidebar();   // close when clicking overlay
+                        });
+                        body.appendChild(overlay);
+                        body.classList.add('sidebar-open');
+                    }
+                } else {
+                    const overlay = document.getElementById('sidebarOverlay');
+                    if (overlay) overlay.remove();
+                    body.classList.remove('sidebar-open');
+                }
+            }
+        }
+
+        // close sidebar if window resizes beyond mobile and overlay exists
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('mainSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (window.innerWidth > 768) {
+                if (sidebar.classList.contains('active')) {
+                    sidebar.classList.remove('active');
+                }
+                if (overlay) overlay.remove();
+                document.body.classList.remove('sidebar-open');
+            } else {
+                // on mobile, if sidebar becomes inactive but overlay left (rare)
+                if (!sidebar.classList.contains('active') && overlay) {
+                    overlay.remove();
+                    document.body.classList.remove('sidebar-open');
+                }
+            }
+        });
+
+        // optional: close on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const sidebar = document.getElementById('mainSidebar');
+                if (sidebar.classList.contains('active')) {
+                    toggleSidebar();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
