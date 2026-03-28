@@ -1,19 +1,21 @@
 RewriteEngine On
 RewriteBase /ztorespotcrm_admin/
 
-# جلوگیری rewrite loop (IMPORTANT)
-RewriteCond %{ENV:REDIRECT_STATUS} ^$
+# Remove .php extension (GET only)
 RewriteCond %{THE_REQUEST} \.php
+RewriteCond %{REQUEST_METHOD} GET
 RewriteRule ^(.+)\.php$ /ztorespotcrm_admin/$1 [R=301,L]
+
+# 🔥 Allow AJAX requests (IMPORTANT FIX)
+RewriteCond %{REQUEST_URI} ^/ztorespotcrm_admin/ajax/
+RewriteCond %{REQUEST_METHOD} POST
+RewriteRule .* - [L]
 
 # Skip existing files/folders
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 
-# Don't rewrite ajax POST
-RewriteCond %{REQUEST_URI} !^/ztorespotcrm_admin/ajax/
-
-# Internal rewrite
+# Rewrite to .php
 RewriteRule ^(.+)$ $1.php [L,QSA]
 
 # Default page

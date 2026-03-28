@@ -194,7 +194,126 @@ function logout()
     exit;
 }
 
+// Get all users (sales persons) - fetch user_uid
+function getUsers()
+{
+    global $conn;
+    $stmt = $conn->prepare("SELECT id, user_uid, name, phone, email FROM users WHERE id > 0 ORDER BY name ASC");
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
 
+// Get all active targets
+function getAllActiveTargets($target_type = null)
+{
+    global $conn;
+    $current_date = date('Y-m-d');
+
+    $sql = "SELECT ts.*, 
+            CASE 
+                WHEN ts.target_type = 'team' THEN CONCAT('Team Target (', DATE_FORMAT(ts.created_at, '%d %b %Y'), ')')
+                ELSE u.name 
+            END as name,
+            ts.user_uid as user_uid,
+            u.phone, 
+            u.email
+            FROM target_settings ts 
+            LEFT JOIN users u ON ts.user_uid = u.user_uid 
+            WHERE ts.status = 'active' AND ts.start_date <= ? AND ts.end_date >= ?";
+
+    $params = [$current_date, $current_date];
+    $types = "ss";
+
+    if ($target_type) {
+        $sql .= " AND ts.target_type = ?";
+        $params[] = $target_type;
+        $types .= "s";
+    }
+
+    $sql .= " ORDER BY ts.created_at DESC";
+
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        error_log("Prepare failed: " . $conn->error);
+        return [];
+    }
+
+    $stmt->bind_param($types, ...$params);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $targets = $result->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    return $targets;
+}
+
+// Get team targets specifically
+function getTeamTargets()
+{
+    global $conn;
+    $current_date = date('Y-m-d');
+
+    $sql = "SELECT ts.*, 
+            CONCAT('Team Target (', DATE_FORMAT(ts.created_at, '%d %b %Y'), ')') as name,
+            'TEAM' as user_uid,
+            NULL as phone,
+            NULL as email
+            FROM target_settings ts 
+            WHERE ts.target_type = 'team' AND ts.status = 'active' 
+            AND ts.start_date <= ? AND ts.end_date >= ?
+            ORDER BY ts.created_at DESC";
+
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        error_log("Prepare failed: " . $conn->error);
+        return [];
+    }
+
+    $stmt->bind_param("ss", $current_date, $current_date);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $targets = $result->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    return $targets;
+}
+
+// Get target statistics
+function getTargetStats()
+{
+    global $conn;
+    $current_date = date('Y-m-d');
+
+    // Individual targets stats
+    $ind_result = $conn->query("SELECT 
+        COUNT(*) as total_targets,
+        SUM(CASE WHEN achievement_percentage >= 100 THEN 1 ELSE 0 END) as achieved_targets,
+        COALESCE(AVG(achievement_percentage), 0) as avg_achievement,
+        COALESCE(SUM(target_amount), 0) as total_target_amount
+        FROM target_settings 
+        WHERE target_type = 'individual' AND status = 'active' 
+        AND start_date <= '$current_date' AND end_date >= '$current_date'");
+
+    $ind_stats = $ind_result ? $ind_result->fetch_assoc() : ['total_targets' => 0, 'achieved_targets' => 0, 'avg_achievement' => 0, 'total_target_amount' => 0];
+
+    // Team targets stats
+    $team_result = $conn->query("SELECT 
+        COUNT(*) as total_targets,
+        SUM(CASE WHEN achievement_percentage >= 100 THEN 1 ELSE 0 END) as achieved_targets,
+        COALESCE(AVG(achievement_percentage), 0) as avg_achievement,
+        COALESCE(SUM(target_amount), 0) as total_target_amount
+        FROM target_settings 
+        WHERE target_type = 'team' AND status = 'active' 
+        AND start_date <= '$current_date' AND end_date >= '$current_date'");
+
+    $team_stats = $team_result ? $team_result->fetch_assoc() : ['total_targets' => 0, 'achieved_targets' => 0, 'avg_achievement' => 0, 'total_target_amount' => 0];
+
+    return [
+        'individual' => $ind_stats,
+        'team' => $team_stats
+    ];
+}
 
 
 // // Add these functions to your existing functions.php

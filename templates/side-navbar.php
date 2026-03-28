@@ -6,6 +6,7 @@
                 <a href="dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
                 <a href="tracking.php"><i class="bi bi-person-vcard"></i> Tracking</a>
                 <a href="target-settings.php"><i class="bi bi-bookmark-star-fill"></i> Target Settings</a>
+                <a href="target-history.php"><i class="bi bi-clock-history"></i> Target History</a>
                 <a href="plan-settings.php"><i class="bi bi-bounding-box"></i> Plan Settings</a>
                 <a href="report.php"><i class="bi bi-graph-up"></i> Report</a>
                 <a href="settings.php"><i class="bi bi-gear"></i> Settings</a>
