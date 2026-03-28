@@ -1,22 +1,20 @@
 RewriteEngine On
 RewriteBase /ztorespotcrm_admin/
 
-# Remove .php extension from URL (only for GET requests)
+# جلوگیری rewrite loop (IMPORTANT)
+RewriteCond %{ENV:REDIRECT_STATUS} ^$
 RewriteCond %{THE_REQUEST} \.php
-RewriteCond %{REQUEST_METHOD} GET
 RewriteRule ^(.+)\.php$ /ztorespotcrm_admin/$1 [R=301,L]
 
-# If request is not file or folder
+# Skip existing files/folders
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 
-# Load .php automatically (for all requests)
+# Don't rewrite ajax POST
+RewriteCond %{REQUEST_URI} !^/ztorespotcrm_admin/ajax/
+
+# Internal rewrite
 RewriteRule ^(.+)$ $1.php [L,QSA]
 
-# Default homepage
+# Default page
 RewriteRule ^$ index.php [L]
-
-# Don't rewrite AJAX requests to /ajax/ directory
-RewriteCond %{REQUEST_URI} ^/ztorespotcrm_admin/ajax/
-RewriteCond %{REQUEST_METHOD} POST
-RewriteRule .* - [L]

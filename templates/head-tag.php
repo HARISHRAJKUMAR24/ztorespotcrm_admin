@@ -8,3 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="<?php echo ASSETS_URL; ?>css/style.css" rel="stylesheet">
+
+    <script>
+        const MAIN_URL = "<?= MAIN_URL ?>";
+    </script>
