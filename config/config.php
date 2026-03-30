@@ -11,9 +11,9 @@ define('APP_NAME', 'Ztorespot CRM Admin Panel');
 
 // Database Configuration
 define('DB_HOST', 'localhost');
+define('DB_NAME', 'ztorespot_sales_panel');
 define('DB_USER', 'root');
 define('DB_PASS', '');
-define('DB_NAME', 'ztorespot_sales_panel');
 
 // Create connection
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);

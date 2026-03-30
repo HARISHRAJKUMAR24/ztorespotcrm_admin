@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     });
 
                     // Redirect to dashboard
-                    window.location.href = data.redirect || MAIN_URL + "dashboard.php";
+                    window.location.href = data.redirect || MAIN_URL + "index.php";
                 } else {
                     // Show error message
                     showError(data.message || "Login failed. Please check your credentials.");

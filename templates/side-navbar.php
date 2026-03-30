@@ -3,7 +3,7 @@
                     <i class="bi bi-x-lg" onclick="toggleSidebar()"></i>
                 </div>
                 <h4 class="px-2">Ztorespot</h4>
-                <a href="dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                <a href="index.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
                 <a href="tracking.php"><i class="bi bi-person-vcard"></i> Tracking</a>
                 <a href="target-settings.php"><i class="bi bi-bookmark-star-fill"></i> Target Settings</a>
                 <a href="target-history.php"><i class="bi bi-clock-history"></i> Target History</a>

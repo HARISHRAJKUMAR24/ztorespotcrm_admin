@@ -121,7 +121,7 @@ try {
         echo json_encode([
             'success' => true,
             'message' => 'Login successful! Redirecting...',
-            'redirect' => MAIN_URL . 'dashboard.php'
+            'redirect' => MAIN_URL . 'index.php'
         ]);
     } else {
         error_log("Password verification FAILED");

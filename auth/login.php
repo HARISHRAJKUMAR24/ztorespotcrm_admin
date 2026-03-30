@@ -4,7 +4,7 @@ require_once "../lib/functions.php";
 
 // Check if user is already logged in
 if (isLoggedIn()) {
-    header("Location: " . MAIN_URL . "dashboard.php");
+    header("Location: " . MAIN_URL . "index.php");
     exit;
 }
 ?>
