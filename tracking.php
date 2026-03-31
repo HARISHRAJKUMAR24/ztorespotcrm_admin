@@ -11,12 +11,12 @@ if (!isLoggedIn()) {
 $currentAdmin = getCurrentAdmin();
 
 // Get online users (active in last 5 minutes)
-function getOnlineUsers() {
+function getOnlineUsers()
+{
     global $conn;
     try {
         $sql = "SELECT * FROM user_activity_log 
-                WHERE is_online = 1 
-                AND last_activity >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+               WHERE last_activity >= DATE_SUB(NOW(), INTERVAL 10 SECOND)
                 ORDER BY last_activity DESC";
         $result = $conn->query($sql);
         $users = [];
@@ -30,11 +30,12 @@ function getOnlineUsers() {
 }
 
 // Get offline users (inactive for more than 5 minutes)
-function getOfflineUsers() {
+function getOfflineUsers()
+{
     global $conn;
     try {
         $sql = "SELECT * FROM user_activity_log 
-                WHERE (is_online = 0 OR last_activity < DATE_SUB(NOW(), INTERVAL 5 MINUTE))
+WHERE last_activity < DATE_SUB(NOW(), INTERVAL 1 MINUTE)
                 ORDER BY last_activity DESC";
         $result = $conn->query($sql);
         $users = [];
@@ -48,7 +49,8 @@ function getOfflineUsers() {
 }
 
 // Get all users from users table
-function getAllUsers() {
+function getAllUsers()
+{
     global $conn;
     try {
         $sql = "SELECT id, user_uid, name, phone, email, created_at FROM users ORDER BY name ASC";
@@ -64,23 +66,24 @@ function getAllUsers() {
 }
 
 // Get activity statistics
-function getActivityStats() {
+function getActivityStats()
+{
     global $conn;
     try {
         // Total users
         $total_result = $conn->query("SELECT COUNT(DISTINCT user_id) as count FROM user_activity_log");
         $total = $total_result->fetch_assoc();
-        
+
         // Online now
         $online_result = $conn->query("SELECT COUNT(DISTINCT user_id) as count FROM user_activity_log 
                                        WHERE is_online = 1 AND last_activity >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)");
         $online = $online_result->fetch_assoc();
-        
+
         // Active today
         $today_result = $conn->query("SELECT COUNT(DISTINCT user_id) as count FROM user_activity_log 
                                       WHERE DATE(last_activity) = CURDATE()");
         $today = $today_result->fetch_assoc();
-        
+
         return [
             'total' => $total['count'] ?? 0,
             'online' => $online['count'] ?? 0,
@@ -106,11 +109,11 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
 <head>
     <?php template('head-tag'); ?>
     <meta name="user-id" content="<?= $currentAdmin['id'] ?>">
-   
+
     <meta name="user-name" content="<?= $currentAdmin['username'] ?>">
-    
+
     <title>User Activity - Admin Panel</title>
-    
+
     <style>
         :root {
             --primary: #4f46e5;
@@ -133,28 +136,34 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
             display: inline-block;
             margin-right: 8px;
         }
+
         .online {
             background-color: #10b981;
             box-shadow: 0 0 5px #10b981;
         }
+
         .offline {
             background-color: #ef4444;
         }
+
         .user-card {
             transition: all 0.3s;
             border: 1px solid #e2e8f0;
         }
+
         .user-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             border-color: var(--primary);
         }
+
         .status-badge {
             padding: 4px 12px;
             border-radius: 30px;
             font-size: 12px;
             font-weight: 600;
         }
+
         .stat-card {
             background: white;
             border-radius: 20px;
@@ -162,10 +171,12 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
             border: 1px solid #e2e8f0;
             transition: all 0.3s;
         }
+
         .stat-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         }
+
         .btn-primary-custom {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             border: none;
@@ -174,19 +185,23 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
             border-radius: 12px;
             transition: all 0.3s;
         }
+
         .btn-primary-custom:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(79,70,229,0.3);
+            box-shadow: 0 5px 15px rgba(79, 70, 229, 0.3);
             color: white;
         }
+
         .nav-tabs .nav-link {
             color: var(--dark);
             font-weight: 500;
         }
+
         .nav-tabs .nav-link.active {
             color: var(--primary);
             border-bottom-color: var(--primary);
         }
+
         .last-active-time {
             font-size: 11px;
         }
@@ -213,13 +228,13 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
                         <span class="d-none d-sm-inline">
                             <?= htmlspecialchars($currentAdmin['username'] ?? 'Admin') ?>
                         </span>
-                        <img src="https://ui-avatars.com/api/?name=<?= urlencode($currentAdmin['username'] ?? 'Admin') ?>&background=4f46e5&color=fff&size=40" 
-                             alt="avatar" class="avatar">
+                        <img src="https://ui-avatars.com/api/?name=<?= urlencode($currentAdmin['username'] ?? 'Admin') ?>&background=4f46e5&color=fff&size=40"
+                            alt="avatar" class="avatar">
                     </div>
                 </div>
 
                 <div class="scrollable-content p-4">
-                    
+
                     <!-- Header -->
                     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
                         <div>
@@ -229,7 +244,7 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
                             </h2>
                             <p class="text-secondary mb-0">Monitor sales team online/offline status in real-time</p>
                             <small class="text-muted">
-                                <i class="bi bi-info-circle"></i> 
+                                <i class="bi bi-info-circle"></i>
                                 Status updates are sent automatically from the sales team panel every 30 seconds
                             </small>
                         </div>
@@ -237,7 +252,7 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
                             <i class="bi bi-arrow-repeat me-2"></i>Refresh
                         </button>
                     </div>
-                    
+
                     <!-- Statistics Cards -->
                     <div class="row mb-4">
                         <div class="col-md-4 mb-3">
@@ -286,19 +301,19 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
                     <ul class="nav nav-tabs mb-4" id="userTabs" role="tablist">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="online-tab" data-bs-toggle="tab" data-bs-target="#online" type="button" role="tab">
-                                <i class="bi bi-circle-fill text-success me-1"></i> Online 
+                                <i class="bi bi-circle-fill text-success me-1"></i> Online
                                 <span class="badge bg-success ms-1"><?= count($onlineUsers) ?></span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="offline-tab" data-bs-toggle="tab" data-bs-target="#offline" type="button" role="tab">
-                                <i class="bi bi-circle-fill text-danger me-1"></i> Offline 
+                                <i class="bi bi-circle-fill text-danger me-1"></i> Offline
                                 <span class="badge bg-secondary ms-1"><?= count($offlineUsers) ?></span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
-                                <i class="bi bi-people me-1"></i> All Sales Team 
+                                <i class="bi bi-people me-1"></i> All Sales Team
                                 <span class="badge bg-primary ms-1"><?= count($allUsers) ?></span>
                             </button>
                         </li>
@@ -327,11 +342,11 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
                                                         <span class="status-badge bg-success bg-opacity-10 text-success">Online</span>
                                                     </div>
                                                     <div class="small text-muted">
-                                                        <i class="bi bi-clock"></i> Last activity: 
+                                                        <i class="bi bi-clock"></i> Last activity:
                                                         <?= date('H:i:s', strtotime($user['last_activity'])) ?>
                                                     </div>
                                                     <div class="small text-muted mt-1">
-                                                        <i class="bi bi-file-text"></i> Page: 
+                                                        <i class="bi bi-file-text"></i> Page:
                                                         <?= basename($user['current_page'] ?? 'Unknown') ?>
                                                     </div>
                                                     <div class="small text-muted mt-1">
@@ -375,11 +390,11 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
                                                         <span class="status-badge bg-danger bg-opacity-10 text-danger">Offline</span>
                                                     </div>
                                                     <div class="small text-muted">
-                                                        <i class="bi bi-clock"></i> Last seen: 
+                                                        <i class="bi bi-clock"></i> Last seen:
                                                         <?= date('d M H:i', strtotime($user['last_activity'])) ?>
                                                     </div>
                                                     <div class="small text-muted mt-1">
-                                                        <i class="bi bi-file-text"></i> Last page: 
+                                                        <i class="bi bi-file-text"></i> Last page:
                                                         <?= basename($user['current_page'] ?? 'Unknown') ?>
                                                     </div>
                                                 </div>
@@ -401,7 +416,7 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
                         <div class="tab-pane fade" id="all" role="tabpanel">
                             <div class="row">
                                 <?php if (!empty($allUsers)): ?>
-                                    <?php foreach ($allUsers as $user): 
+                                    <?php foreach ($allUsers as $user):
                                         $isOnline = in_array($user['id'], $onlineUserIds);
                                     ?>
                                         <div class="col-md-6 col-lg-4 mb-3">
@@ -456,13 +471,13 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-      //  const MAIN_URL = "<?= MAIN_URL ?>";
-        
+        //  const MAIN_URL = "<?= MAIN_URL ?>";
+
         function toggleSidebar() {
             const sidebar = document.getElementById('mainSidebar');
             const body = document.body;
             if (!sidebar) return;
-            
+
             sidebar.classList.toggle('active');
 
             if (window.innerWidth <= 768) {
@@ -507,7 +522,7 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
                 }
             }
         });
-        
+
         // Auto refresh every 30 seconds
         setInterval(function() {
             location.reload();
