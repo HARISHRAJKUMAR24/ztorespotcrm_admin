@@ -10,6 +10,8 @@ if (!isLoggedIn()) {
 
 $currentAdmin = getCurrentAdmin();
 
+
+
 // Get online users (active in last 5 minutes)
 function getOnlineUsers()
 {
@@ -53,12 +55,32 @@ function getAllUsers()
 {
     global $conn;
     try {
-        $sql = "SELECT id, user_uid, name, phone, email, created_at FROM users ORDER BY name ASC";
+        $sql = "SELECT 
+                    u.id,
+                    u.user_uid,
+                    u.name,
+                    u.phone,
+                    u.email,
+                    u.created_at,
+                    l.last_activity,
+                    l.current_page
+                FROM users u
+                LEFT JOIN user_activity_log l 
+                    ON u.id = l.user_id
+                AND l.last_activity = (
+                    SELECT MAX(last_activity) 
+                    FROM user_activity_log 
+                    WHERE user_id = u.id
+                )
+                ORDER BY u.name ASC";
+
         $result = $conn->query($sql);
         $users = [];
+
         while ($row = $result->fetch_assoc()) {
             $users[] = $row;
         }
+
         return $users;
     } catch (Exception $e) {
         return [];
@@ -75,8 +97,11 @@ function getActivityStats()
         $total = $total_result->fetch_assoc();
 
         // Online now
-        $online_result = $conn->query("SELECT COUNT(DISTINCT user_id) as count FROM user_activity_log 
-                                       WHERE is_online = 1 AND last_activity >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)");
+      $online_result = $conn->query("
+    SELECT COUNT(DISTINCT user_id) as count 
+    FROM user_activity_log 
+    WHERE last_activity >= DATE_SUB(NOW(), INTERVAL 30 SECOND)
+");
         $online = $online_result->fetch_assoc();
 
         // Active today
@@ -105,7 +130,19 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
 
 <!DOCTYPE html>
 <html lang="en">
+<style>
 
+/* Online card - green border */
+.online-card {
+    border: 2px solid #10b981 !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+/* Offline card - subtle */
+.offline-card {
+    border: 1px solid #e2e8f0;
+}
+</style>
 <head>
     <?php template('head-tag'); ?>
     <meta name="user-id" content="<?= $currentAdmin['id'] ?>">
@@ -297,172 +334,70 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
                         </div>
                     </div>
 
-                    <!-- Tabs for Online/Offline/All Users -->
-                    <ul class="nav nav-tabs mb-4" id="userTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="online-tab" data-bs-toggle="tab" data-bs-target="#online" type="button" role="tab">
-                                <i class="bi bi-circle-fill text-success me-1"></i> Online
-                                <span class="badge bg-success ms-1"><?= count($onlineUsers) ?></span>
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="offline-tab" data-bs-toggle="tab" data-bs-target="#offline" type="button" role="tab">
-                                <i class="bi bi-circle-fill text-danger me-1"></i> Offline
-                                <span class="badge bg-secondary ms-1"><?= count($offlineUsers) ?></span>
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
-                                <i class="bi bi-people me-1"></i> All Sales Team
-                                <span class="badge bg-primary ms-1"><?= count($allUsers) ?></span>
-                            </button>
-                        </li>
-                    </ul>
+                
+<div class="row">
+    <?php if (!empty($allUsers)): ?>
+        <?php foreach ($allUsers as $user):
+            $isOnline = in_array($user['id'], $onlineUserIds);
+        ?>
+            <div class="col-md-6 col-lg-4 mb-3">
+<div class="card user-card shadow-sm h-100 <?= $isOnline ? 'online-card' : 'offline-card' ?>"
+         onclick="openUserModal(<?= $user['id'] ?>)">
+                                <div class="card-body">
 
-                    <div class="tab-content">
-                        <!-- Online Users Tab -->
-                        <div class="tab-pane fade show active" id="online" role="tabpanel">
-                            <div class="row">
-                                <?php if (!empty($onlineUsers)): ?>
-                                    <?php foreach ($onlineUsers as $user): ?>
-                                        <div class="col-md-6 col-lg-4 mb-3">
-                                            <div class="card user-card shadow-sm h-100">
-                                                <div class="card-body">
-                                                    <div class="d-flex align-items-center mb-3">
-                                                        <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
-                                                            <i class="bi bi-person fs-4 text-primary"></i>
-                                                        </div>
-                                                        <div>
-                                                            <h6 class="mb-0 fw-bold"><?= htmlspecialchars($user['user_name']) ?></h6>
-                                                            <small class="text-muted"><?= htmlspecialchars($user['user_uid']) ?></small>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <span class="online-indicator online"></span>
-                                                        <span class="status-badge bg-success bg-opacity-10 text-success">Online</span>
-                                                    </div>
-                                                    <div class="small text-muted">
-                                                        <i class="bi bi-clock"></i> Last activity:
-                                                        <?= date('H:i:s', strtotime($user['last_activity'])) ?>
-                                                    </div>
-                                                    <div class="small text-muted mt-1">
-                                                        <i class="bi bi-file-text"></i> Page:
-                                                        <?= basename($user['current_page'] ?? 'Unknown') ?>
-                                                    </div>
-                                                    <div class="small text-muted mt-1">
-                                                        <i class="bi bi-globe"></i> IP: <?= $user['ip_address'] ?>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <div class="col-12">
-                                        <div class="text-center py-4">
-                                            <i class="bi bi-people fs-1 text-muted"></i>
-                                            <p class="text-muted mt-2 mb-0">No sales team members currently online</p>
-                                            <small class="text-muted">When sellers log in to the sales panel, they will appear here</small>
-                                        </div>
-                                    </div>
-                                <?php endif; ?>
+                        <!-- USER INFO -->
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-<?= $isOnline ? 'primary' : 'secondary' ?> bg-opacity-10 rounded-circle p-3 me-3">
+                                <i class="bi bi-person fs-4 text-<?= $isOnline ? 'primary' : 'secondary' ?>"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold"><?= htmlspecialchars($user['name']) ?></h6>
+                                <small class="text-muted"><?= htmlspecialchars($user['user_uid']) ?></small>
                             </div>
                         </div>
 
-                        <!-- Offline Users Tab -->
-                        <div class="tab-pane fade" id="offline" role="tabpanel">
-                            <div class="row">
-                                <?php if (!empty($offlineUsers)): ?>
-                                    <?php foreach ($offlineUsers as $user): ?>
-                                        <div class="col-md-6 col-lg-4 mb-3">
-                                            <div class="card user-card shadow-sm h-100">
-                                                <div class="card-body">
-                                                    <div class="d-flex align-items-center mb-3">
-                                                        <div class="bg-secondary bg-opacity-10 rounded-circle p-3 me-3">
-                                                            <i class="bi bi-person fs-4 text-secondary"></i>
-                                                        </div>
-                                                        <div>
-                                                            <h6 class="mb-0 fw-bold"><?= htmlspecialchars($user['user_name']) ?></h6>
-                                                            <small class="text-muted"><?= htmlspecialchars($user['user_uid']) ?></small>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <span class="online-indicator offline"></span>
-                                                        <span class="status-badge bg-danger bg-opacity-10 text-danger">Offline</span>
-                                                    </div>
-                                                    <div class="small text-muted">
-                                                        <i class="bi bi-clock"></i> Last seen:
-                                                        <?= date('d M H:i', strtotime($user['last_activity'])) ?>
-                                                    </div>
-                                                    <div class="small text-muted mt-1">
-                                                        <i class="bi bi-file-text"></i> Last page:
-                                                        <?= basename($user['current_page'] ?? 'Unknown') ?>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <div class="col-12">
-                                        <div class="text-center py-4">
-                                            <i class="bi bi-person-check fs-1 text-muted"></i>
-                                            <p class="text-muted mt-2 mb-0">No offline records found</p>
-                                        </div>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
+                        <!-- STATUS -->
+                        <div class="mb-2">
+                            <span class="online-indicator <?= $isOnline ? 'online' : 'offline' ?>"></span>
+                            <span class="status-badge bg-<?= $isOnline ? 'success' : 'danger' ?> bg-opacity-10 text-<?= $isOnline ? 'success' : 'danger' ?>">
+                                <?= $isOnline ? 'Online' : 'Offline' ?>
+                            </span>
                         </div>
 
-                        <!-- All Users Tab -->
-                        <div class="tab-pane fade" id="all" role="tabpanel">
-                            <div class="row">
-                                <?php if (!empty($allUsers)): ?>
-                                    <?php foreach ($allUsers as $user):
-                                        $isOnline = in_array($user['id'], $onlineUserIds);
-                                    ?>
-                                        <div class="col-md-6 col-lg-4 mb-3">
-                                            <div class="card user-card shadow-sm h-100">
-                                                <div class="card-body">
-                                                    <div class="d-flex align-items-center mb-3">
-                                                        <div class="bg-<?= $isOnline ? 'primary' : 'secondary' ?> bg-opacity-10 rounded-circle p-3 me-3">
-                                                            <i class="bi bi-person fs-4 text-<?= $isOnline ? 'primary' : 'secondary' ?>"></i>
-                                                        </div>
-                                                        <div>
-                                                            <h6 class="mb-0 fw-bold"><?= htmlspecialchars($user['name']) ?></h6>
-                                                            <small class="text-muted"><?= htmlspecialchars($user['user_uid']) ?></small>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mb-2">
-                                                        <span class="online-indicator <?= $isOnline ? 'online' : 'offline' ?>"></span>
-                                                        <span class="status-badge bg-<?= $isOnline ? 'success' : 'danger' ?> bg-opacity-10 text-<?= $isOnline ? 'success' : 'danger' ?>">
-                                                            <?= $isOnline ? 'Online' : 'Offline' ?>
-                                                        </span>
-                                                    </div>
-                                                    <div class="small text-muted">
-                                                        <i class="bi bi-phone"></i> Phone: <?= htmlspecialchars($user['phone']) ?>
-                                                    </div>
-                                                    <?php if ($user['email']): ?>
-                                                        <div class="small text-muted mt-1">
-                                                            <i class="bi bi-envelope"></i> Email: <?= htmlspecialchars($user['email']) ?>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                    <div class="small text-muted mt-1">
-                                                        <i class="bi bi-calendar"></i> Joined: <?= date('d M Y', strtotime($user['created_at'])) ?>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <div class="col-12">
-                                        <div class="text-center py-4">
-                                            <i class="bi bi-person-x fs-1 text-muted"></i>
-                                            <p class="text-muted mt-2 mb-0">No sales team members found</p>
-                                        </div>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
+                        <!-- LAST SEEN -->
+                        <div class="small text-muted mt-1">
+                            <i class="bi bi-clock"></i>
+                            <?= $isOnline 
+                                ? 'Active now' 
+                                : (!empty($user['last_activity']) 
+                                    ? 'Last seen: ' . date('d M H:i', strtotime($user['last_activity'])) 
+                                    : 'No activity') ?>
                         </div>
+
+                        <!-- LAST PAGE -->
+                        <div class="small text-muted mt-1">
+                            <i class="bi bi-file-text"></i>
+                            <?= !empty($user['current_page']) 
+                                ? basename($user['current_page']) 
+                                : 'No page data' ?>
+                        </div>
+
+                        <!-- PHONE -->
+                        <div class="small text-muted mt-1">
+                            <i class="bi bi-phone"></i> <?= htmlspecialchars($user['phone']) ?>
+                        </div>
+
                     </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    <?php else: ?>
+        <div class="col-12 text-center py-4">
+            <p class="text-muted">No sales team members found</p>
+        </div>
+    <?php endif; ?>
+</div>
+                
 
                 </div>
             </div>
@@ -470,6 +405,28 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+function openUserModal(userId) {
+
+    // Show modal
+    var modal = new bootstrap.Modal(document.getElementById('userModal'));
+    modal.show();
+
+    // Loading state
+    document.getElementById('modalContent').innerHTML = "Loading...";
+
+    // Fetch data
+fetch("ajax/get-user-details.php?user_id=" + userId)
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById('modalContent').innerHTML = data;
+        })
+        .catch(() => {
+            document.getElementById('modalContent').innerHTML = "Error loading data";
+        });
+}
+</script>
     <script>
         //  const MAIN_URL = "<?= MAIN_URL ?>";
 
@@ -528,6 +485,25 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
             location.reload();
         }, 30000);
     </script>
+
+
+<!-- User Details Modal -->
+<div class="modal fade" id="userModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Sales Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body" id="modalContent">
+        <p>Loading...</p>
+      </div>
+
+    </div>
+  </div>
+</div>
 </body>
 
 </html>
