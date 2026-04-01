@@ -343,7 +343,7 @@ $secretKeyPlaceholder = str_repeat('•', 16);
         </form>
 
         <div class="login-link">
-            Already have an account? <a href="<?= MAIN_URL ?>login.php">Sign In</a>
+            Already have an account? <a href="<?= MAIN_URL ?>auth/login.php">Sign In</a>
         </div>
 
         <div class="signup-footer">

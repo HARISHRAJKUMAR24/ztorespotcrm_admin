@@ -271,7 +271,7 @@ if (isLoggedIn()) {
         </form>
 
         <div class="signup-link">
-            Don't have an account? <a href="<?= MAIN_URL ?>signup.php">Sign Up</a>
+            Don't have an account? <a href="<?= MAIN_URL ?>auth/signup.php">Sign Up</a>
         </div>
 
         <div class="login-footer">
