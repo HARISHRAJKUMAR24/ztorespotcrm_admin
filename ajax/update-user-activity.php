@@ -1,5 +1,4 @@
 <?php
-//update-user-activity.php
 require_once '../config/config.php';
 require_once '../lib/functions.php';
 

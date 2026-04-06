@@ -246,12 +246,12 @@ if (isLoggedIn()) {
         <form id="loginForm">
             <div class="input-group">
                 <label>Email Address</label>
-                <input type="email" id="email" name="email" placeholder="Enter your email" value="admin@ztorespot.com" required>
+                <input type="email" id="email" name="email" placeholder="Enter your email"  required>
             </div>
 
             <div class="input-group password-toggle">
                 <label>Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter your password" value="Ztorespotcrm@2026" required>
+                <input type="password" id="password" name="password" placeholder="Enter your password"  required>
                 <span class="toggle-password" onclick="togglePassword()">👁️</span>
             </div>
 

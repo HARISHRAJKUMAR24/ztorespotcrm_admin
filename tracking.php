@@ -18,7 +18,7 @@ function getOnlineUsers()
     global $conn;
     try {
         $sql = "SELECT * FROM user_activity_log 
-               WHERE last_activity >= DATE_SUB(NOW(), INTERVAL 10 SECOND)
+               WHERE last_activity >= DATE_SUB(NOW(), INTERVAL 20 MINUTE)
                 ORDER BY last_activity DESC";
         $result = $conn->query($sql);
         $users = [];
@@ -97,10 +97,10 @@ function getActivityStats()
         $total = $total_result->fetch_assoc();
 
         // Online now
-      $online_result = $conn->query("
+        $online_result = $conn->query("
     SELECT COUNT(DISTINCT user_id) as count 
     FROM user_activity_log 
-    WHERE last_activity >= DATE_SUB(NOW(), INTERVAL 30 SECOND)
+    WHERE last_activity >= DATE_SUB(NOW(), INTERVAL 20 MINUTE)
 ");
         $online = $online_result->fetch_assoc();
 
@@ -131,18 +131,18 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
 <!DOCTYPE html>
 <html lang="en">
 <style>
+    /* Online card - green border */
+    .online-card {
+        border: 2px solid #10b981 !important;
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    }
 
-/* Online card - green border */
-.online-card {
-    border: 2px solid #10b981 !important;
-    box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
-}
-
-/* Offline card - subtle */
-.offline-card {
-    border: 1px solid #e2e8f0;
-}
+    /* Offline card - subtle */
+    .offline-card {
+        border: 1px solid #e2e8f0;
+    }
 </style>
+
 <head>
     <?php template('head-tag'); ?>
     <meta name="user-id" content="<?= $currentAdmin['id'] ?>">
@@ -334,70 +334,77 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
                         </div>
                     </div>
 
-                
-<div class="row">
-    <?php if (!empty($allUsers)): ?>
-        <?php foreach ($allUsers as $user):
-            $isOnline = in_array($user['id'], $onlineUserIds);
-        ?>
-            <div class="col-md-6 col-lg-4 mb-3">
-<div class="card user-card shadow-sm h-100 <?= $isOnline ? 'online-card' : 'offline-card' ?>"
-         onclick="openUserModal(<?= $user['id'] ?>)">
-                                <div class="card-body">
 
-                        <!-- USER INFO -->
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="bg-<?= $isOnline ? 'primary' : 'secondary' ?> bg-opacity-10 rounded-circle p-3 me-3">
-                                <i class="bi bi-person fs-4 text-<?= $isOnline ? 'primary' : 'secondary' ?>"></i>
+                    <div class="row">
+                        <?php if (!empty($allUsers)): ?>
+                            <?php foreach ($allUsers as $user):
+                                $isOnline = in_array($user['id'], $onlineUserIds);
+                            ?>
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card user-card shadow-sm h-100 <?= $isOnline ? 'online-card' : 'offline-card' ?>"
+                                        onclick="openUserModal(<?= $user['id'] ?>)">
+                                        <div class="card-body">
+
+                                            <!-- USER INFO -->
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="bg-<?= $isOnline ? 'primary' : 'secondary' ?> bg-opacity-10 rounded-circle p-3 me-3">
+                                                    <i class="bi bi-person fs-4 text-<?= $isOnline ? 'primary' : 'secondary' ?>"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0 fw-bold"><?= htmlspecialchars($user['name']) ?></h6>
+                                                    <small class="text-muted"><?= htmlspecialchars($user['user_uid']) ?></small>
+                                                </div>
+                                            </div>
+
+                                            <!-- STATUS -->
+                                            <div class="mb-2">
+                                                <span class="online-indicator <?= $isOnline ? 'online' : 'offline' ?>"></span>
+                                                <span class="status-badge bg-<?= $isOnline ? 'success' : 'danger' ?> bg-opacity-10 text-<?= $isOnline ? 'success' : 'danger' ?>">
+                                                    <?= $isOnline ? 'Online' : 'Offline' ?>
+                                                </span>
+
+                                                <a href="<?= MAIN_URL ?>ajax/auth/direct-login.php?user_id=<?= $user['id'] ?>"
+                                                    class="btn btn-success btn-sm"
+                                                  >
+                                                    
+                                                    Login
+                                                </a>
+                                            </div>
+
+                                            <!-- LAST SEEN -->
+                                            <div class="small text-muted mt-1">
+                                                <i class="bi bi-clock"></i>
+                                                <?= $isOnline
+                                                    ? 'Active now'
+                                                    : (!empty($user['last_activity'])
+                                                        ? 'Last seen: ' . date('d M H:i', strtotime($user['last_activity']))
+                                                        : 'No activity') ?>
+                                            </div>
+
+                                            <!-- LAST PAGE -->
+                                            <div class="small text-muted mt-1">
+                                                <i class="bi bi-file-text"></i>
+                                                <?= !empty($user['current_page'])
+                                                    ? basename($user['current_page'])
+                                                    : 'No page data' ?>
+                                            </div>
+
+                                            <!-- PHONE -->
+                                            <div class="small text-muted mt-1">
+                                                <i class="bi bi-phone"></i> <?= htmlspecialchars($user['phone']) ?>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div class="col-12 text-center py-4">
+                                <p class="text-muted">No sales team members found</p>
                             </div>
-                            <div>
-                                <h6 class="mb-0 fw-bold"><?= htmlspecialchars($user['name']) ?></h6>
-                                <small class="text-muted"><?= htmlspecialchars($user['user_uid']) ?></small>
-                            </div>
-                        </div>
-
-                        <!-- STATUS -->
-                        <div class="mb-2">
-                            <span class="online-indicator <?= $isOnline ? 'online' : 'offline' ?>"></span>
-                            <span class="status-badge bg-<?= $isOnline ? 'success' : 'danger' ?> bg-opacity-10 text-<?= $isOnline ? 'success' : 'danger' ?>">
-                                <?= $isOnline ? 'Online' : 'Offline' ?>
-                            </span>
-                        </div>
-
-                        <!-- LAST SEEN -->
-                        <div class="small text-muted mt-1">
-                            <i class="bi bi-clock"></i>
-                            <?= $isOnline 
-                                ? 'Active now' 
-                                : (!empty($user['last_activity']) 
-                                    ? 'Last seen: ' . date('d M H:i', strtotime($user['last_activity'])) 
-                                    : 'No activity') ?>
-                        </div>
-
-                        <!-- LAST PAGE -->
-                        <div class="small text-muted mt-1">
-                            <i class="bi bi-file-text"></i>
-                            <?= !empty($user['current_page']) 
-                                ? basename($user['current_page']) 
-                                : 'No page data' ?>
-                        </div>
-
-                        <!-- PHONE -->
-                        <div class="small text-muted mt-1">
-                            <i class="bi bi-phone"></i> <?= htmlspecialchars($user['phone']) ?>
-                        </div>
-
+                        <?php endif; ?>
                     </div>
-                </div>
-            </div>
-        <?php endforeach; ?>
-    <?php else: ?>
-        <div class="col-12 text-center py-4">
-            <p class="text-muted">No sales team members found</p>
-        </div>
-    <?php endif; ?>
-</div>
-                
+
 
                 </div>
             </div>
@@ -406,27 +413,27 @@ $onlineUserIds = array_column($onlineUsers, 'user_id');
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<script>
-function openUserModal(userId) {
+    <script>
+        function openUserModal(userId) {
 
-    // Show modal
-    var modal = new bootstrap.Modal(document.getElementById('userModal'));
-    modal.show();
+            // Show modal
+            var modal = new bootstrap.Modal(document.getElementById('userModal'));
+            modal.show();
 
-    // Loading state
-    document.getElementById('modalContent').innerHTML = "Loading...";
+            // Loading state
+            document.getElementById('modalContent').innerHTML = "Loading...";
 
-    // Fetch data
-fetch("ajax/get-user-details.php?user_id=" + userId)
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById('modalContent').innerHTML = data;
-        })
-        .catch(() => {
-            document.getElementById('modalContent').innerHTML = "Error loading data";
-        });
-}
-</script>
+            // Fetch data
+            fetch("ajax/get-user-details.php?user_id=" + userId)
+                .then(res => res.text())
+                .then(data => {
+                    document.getElementById('modalContent').innerHTML = data;
+                })
+                .catch(() => {
+                    document.getElementById('modalContent').innerHTML = "Error loading data";
+                });
+        }
+    </script>
     <script>
         //  const MAIN_URL = "<?= MAIN_URL ?>";
 
@@ -484,26 +491,38 @@ fetch("ajax/get-user-details.php?user_id=" + userId)
         setInterval(function() {
             location.reload();
         }, 30000);
+
+
+    function openLogin(userId) {
+    var url = "<?= MAIN_URL ?>ajax/auth/direct-login.php?user_id=" + userId;
+
+    var popup = window.open(url, '_blank', 'width=1200,height=800');
+
+    if (!popup || popup.closed || typeof popup.closed == 'undefined') {
+        window.location.href = url;
+    }
+}
     </script>
 
+    <!-- User Details Modal -->
+    <div class="modal fade" id="userModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
 
-<!-- User Details Modal -->
-<div class="modal fade" id="userModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Sales Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
 
-      <div class="modal-header">
-        <h5 class="modal-title">Sales Details</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
+                <div class="modal-body" id="modalContent">
+                    <p>Loading...</p>
+                </div>
 
-      <div class="modal-body" id="modalContent">
-        <p>Loading...</p>
-      </div>
-
+            </div>
+        </div>
     </div>
-  </div>
-</div>
+
 </body>
+
 
 </html>
